@@ -3,12 +3,14 @@ from pathlib import Path
 
 from forge.repository.classification import FileClassifier, FileType
 from forge.repository.scope import AnalysisScope
+from forge.repository.language import LanguageDetector
 
 
 @dataclass
 class DiscoveredFile:
     path: Path
     file_type: FileType
+    language: Language
 
 
 @dataclass
@@ -24,9 +26,11 @@ class RepositoryScanner:
         self,
         scope: AnalysisScope | None = None,
         classifier: FileClassifier | None = None,
+        language_detector: LanguageDetector | None = None,
     ) -> None:
         self.scope = scope or AnalysisScope()
         self.classifier = classifier or FileClassifier()
+        self.language_detector = language_detector or LanguageDetector()
 
     def scan(self, root: Path) -> RepositorySnapshot:
         directories: list[Path] = []
@@ -73,10 +77,12 @@ class RepositoryScanner:
                     continue
 
                 file_type = self.classifier.classify(path)
+                language = self.language_detector.detect(path)
 
                 files.append(
                     DiscoveredFile(
                         path=relative_path,
                         file_type=file_type,
+                        language=language,
                     )
                 )
