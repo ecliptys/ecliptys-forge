@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from forge.repository.scanner import RepositoryScanner
+from forge.storage.database import Database
 
 
 def main(path: str) -> None:
@@ -13,6 +14,14 @@ def main(path: str) -> None:
     if not root.is_dir():
         print(f"Error: repository path is not a directory: {root}")
         return
+
+    forge_directory = root / "forge"
+    forge_directory.mkdir(exist_ok=True)
+    database_path = forge_directory / "index.db"
+
+    database = Database(database_path)
+    database.initialize()
+    database.close()
 
     scanner = RepositoryScanner()
     snapshot = scanner.scan(root)
