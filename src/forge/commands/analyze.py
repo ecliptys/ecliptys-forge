@@ -2,6 +2,7 @@ from pathlib import Path
 
 from forge.repository.scanner import RepositoryScanner
 from forge.storage.database import Database
+from forge.storage.repository_index import RepositoryIndex
 
 
 def main(path: str) -> None:
@@ -26,15 +27,16 @@ def main(path: str) -> None:
     scanner = RepositoryScanner()
     snapshot = scanner.scan(root)
 
-    for file in snapshot.files:
-        print(
-            f"{file.path} | "
-            f"type={file.file_type.value} | "
-            f"language={file.language.value} | "
-            f"size={file.size} | "
-            f"sha256={file.sha256}"
-            f"sensitivity={file.sensitivity}"
-        )
+    forge_directory = root / "forge"
+    forge_directory.mkdir(exist_ok=True)
+
+    database = Database(forge_directory / "index.db")
+    database.initialize()
+
+    index = RepositoryIndex(database)
+    index.save(snapshot)
+
+    database.close()
 
     print("Forge")
     print("─────")
