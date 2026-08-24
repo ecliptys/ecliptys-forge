@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from forge.repository.scanner import RepositoryScanner
+
 
 def main(path: str) -> None:
     root = Path(path).resolve()
@@ -12,6 +14,11 @@ def main(path: str) -> None:
         print(f"Error: repository path is not a directory: {root}")
         return
 
+    scanner = RepositoryScanner()
+    snapshot = scanner.scan(root)
+
     print("Forge")
     print("─────")
     print(f"Repository: {root}")
+    print(f"Files: {len(snapshot.files)}")
+    print(f"Directories: {len(snapshot.directories)}")
