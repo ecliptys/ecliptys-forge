@@ -24,6 +24,7 @@ def main(path: str) -> None:
             f"language={file.language.value} | "
             f"size={file.size} | "
             f"sha256={file.sha256}"
+            f"sensitivity={file.sensitivity}"
         )
 
     print("Forge")

@@ -6,6 +6,7 @@ from forge.repository.classification import FileClassifier, FileType
 from forge.repository.scope import AnalysisScope
 from forge.repository.language import LanguageDetector
 from forge.repository.metadata import FileMetadataCollector
+from forge.repository.sensitive import SensitiveFileDetector, Sensitivity
 
 
 @dataclass
@@ -16,6 +17,7 @@ class DiscoveredFile:
     size: int
     modified_at: datetime
     sha256: str
+    sensitivity: Sensitivity
 
 
 @dataclass
@@ -33,12 +35,17 @@ class RepositoryScanner:
         classifier: FileClassifier | None = None,
         language_detector: LanguageDetector | None = None,
         metadata_collector: FileMetadataCollector | None = None,
+        sensitive_file_detector: SensitiveFileDetector | None = None,
+
     ) -> None:
         self.scope = scope or AnalysisScope()
         self.classifier = classifier or FileClassifier()
         self.language_detector = language_detector or LanguageDetector()
         self.metadata_collector = (
             metadata_collector or FileMetadataCollector()
+        )
+        self.sensitive_file_detector = (
+            sensitive_file_detector or SensitiveFileDetector()
         )
 
     def scan(self, root: Path) -> RepositorySnapshot:
@@ -88,6 +95,7 @@ class RepositoryScanner:
                 file_type = self.classifier.classify(path)
                 language = self.language_detector.detect(path)
                 metadata = self.metadata_collector.collect(path)
+                sensitivity = self.sensitive_file_detector.detect(path)
 
                 files.append(
                     DiscoveredFile(
@@ -97,5 +105,6 @@ class RepositoryScanner:
                         size=metadata.size,
                         modified_at=metadata.modified_at,
                         sha256=metadata.sha256,
+                        sensitivity=sensitivity,
                     )
                 )
