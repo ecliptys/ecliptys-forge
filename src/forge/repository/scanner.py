@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from pathlib import Path
+from datetime import datetime
 
 from forge.repository.classification import FileClassifier, FileType
 from forge.repository.scope import AnalysisScope
 from forge.repository.language import LanguageDetector
+from forge.repository.metadata import FileMetadataCollector
 
 
 @dataclass
@@ -11,6 +13,9 @@ class DiscoveredFile:
     path: Path
     file_type: FileType
     language: Language
+    size: int
+    modified_at: datetime
+    sha256: str
 
 
 @dataclass
@@ -27,10 +32,14 @@ class RepositoryScanner:
         scope: AnalysisScope | None = None,
         classifier: FileClassifier | None = None,
         language_detector: LanguageDetector | None = None,
+        metadata_collector: FileMetadataCollector | None = None,
     ) -> None:
         self.scope = scope or AnalysisScope()
         self.classifier = classifier or FileClassifier()
         self.language_detector = language_detector or LanguageDetector()
+        self.metadata_collector = (
+            metadata_collector or FileMetadataCollector()
+        )
 
     def scan(self, root: Path) -> RepositorySnapshot:
         directories: list[Path] = []
@@ -78,11 +87,15 @@ class RepositoryScanner:
 
                 file_type = self.classifier.classify(path)
                 language = self.language_detector.detect(path)
+                metadata = self.metadata_collector.collect(path)
 
                 files.append(
                     DiscoveredFile(
                         path=relative_path,
                         file_type=file_type,
                         language=language,
+                        size=metadata.size,
+                        modified_at=metadata.modified_at,
+                        sha256=metadata.sha256,
                     )
                 )

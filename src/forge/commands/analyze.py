@@ -17,6 +17,15 @@ def main(path: str) -> None:
     scanner = RepositoryScanner()
     snapshot = scanner.scan(root)
 
+    for file in snapshot.files:
+        print(
+            f"{file.path} | "
+            f"type={file.file_type.value} | "
+            f"language={file.language.value} | "
+            f"size={file.size} | "
+            f"sha256={file.sha256}"
+        )
+
     print("Forge")
     print("─────")
     print(f"Repository: {root}")
