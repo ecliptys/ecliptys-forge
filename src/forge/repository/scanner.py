@@ -1,24 +1,36 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from forge.repository.classification import FileClassifier, FileType
 from forge.repository.scope import AnalysisScope
+
+
+@dataclass
+class DiscoveredFile:
+    path: Path
+    file_type: FileType
 
 
 @dataclass
 class RepositorySnapshot:
     root: Path
     directories: list[Path]
-    files: list[Path]
+    files: list[DiscoveredFile]
 
 
 class RepositoryScanner:
 
-    def __init__(self, scope: AnalysisScope | None = None) -> None:
+    def __init__(
+        self,
+        scope: AnalysisScope | None = None,
+        classifier: FileClassifier | None = None,
+    ) -> None:
         self.scope = scope or AnalysisScope()
+        self.classifier = classifier or FileClassifier()
 
     def scan(self, root: Path) -> RepositorySnapshot:
         directories: list[Path] = []
-        files: list[Path] = []
+        files: list[DiscoveredFile] = []
 
         self._scan_directory(
             root,
@@ -38,7 +50,7 @@ class RepositoryScanner:
         directory: Path,
         root: Path,
         directories: list[Path],
-        files: list[Path],
+        files: list[DiscoveredFile],
     ) -> None:
         for path in directory.iterdir():
             relative_path = path.relative_to(root)
@@ -60,4 +72,11 @@ class RepositoryScanner:
                 if not self.scope.includes_file(path):
                     continue
 
-                files.append(relative_path)
+                file_type = self.classifier.classify(path)
+
+                files.append(
+                    DiscoveredFile(
+                        path=relative_path,
+                        file_type=file_type,
+                    )
+                )
