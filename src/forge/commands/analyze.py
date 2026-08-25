@@ -16,30 +16,50 @@ def main(path: str) -> None:
         print(f"Error: repository path is not a directory: {root}")
         return
 
+    # Scan repository
+    scanner = RepositoryScanner()
+    snapshot = scanner.scan(root)
+
+    # Initialize Forge storage
     forge_directory = root / "forge"
     forge_directory.mkdir(exist_ok=True)
+
     database_path = forge_directory / "index.db"
 
     database = Database(database_path)
     database.initialize()
-    database.close()
 
-    scanner = RepositoryScanner()
-    snapshot = scanner.scan(root)
+    try:
+        index = RepositoryIndex(database)
 
-    forge_directory = root / "forge"
-    forge_directory.mkdir(exist_ok=True)
+        # Detect changes against previous index
+        changes = index.detect_changes(snapshot)
 
-    database = Database(forge_directory / "index.db")
-    database.initialize()
+        # Persist current repository state
+        index.save(snapshot)
 
-    index = RepositoryIndex(database)
-    index.save(snapshot)
-
-    database.close()
+    finally:
+        database.close()
 
     print("Forge")
     print("─────")
     print(f"Repository: {root}")
     print(f"Files: {len(snapshot.files)}")
     print(f"Directories: {len(snapshot.directories)}")
+
+    print()
+    print("Changes")
+    print("───────")
+    print(f"Added: {len(changes.added)}")
+    print(f"Modified: {len(changes.modified)}")
+    print(f"Deleted: {len(changes.deleted)}")
+    print(f"Unchanged: {len(changes.unchanged)}")
+
+    for path in changes.added:
+        print(f"  + {path}")
+
+    for path in changes.modified:
+        print(f"  ~ {path}")
+
+    for path in changes.deleted:
+        print(f"  - {path}")
